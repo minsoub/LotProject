@@ -12,7 +12,7 @@ timeList =  ['17', '18', '19', '20', '21', '22', '23']
 
 layout = [
     [sg.Text('데이터분석 및 전송 프로그램', size=(30, 1), justification='center', font=("Helvetica", 25), relief=sg.RELIEF_RIDGE)],
-    [sg.OK('설정정보 저장', key='Save'), sg.Ok('프로세스 시작', key='Start'), sg.Exit('종료하기', key='Exit')],
+    [sg.OK('설정정보 저장', key='Save'), sg.Ok('프로세스 시작', key='Start'), sg.Ok('프로세스 종료', key='End'), sg.Exit('종료하기', key='Exit')],
     [sg.Text('Machine Data Location', size=(17, 1)), sg.Input(key='_machine_dir_', disabled='true'), sg.FolderBrowse('Search')],
     [sg.Text('Data Read Time',         size=(17, 1)), sg.InputCombo(timeList, key='_tmList_')],
     [sg.Text('전송 URL(Image)',         size=(17, 1)), sg.Input(key='_url_')],
@@ -81,12 +81,16 @@ def getHTML(url):
 
 t = LotProcess('http://google.com')
 
+
 if __name__ == '__main__':
     # create the window
     window = sg.Window('데이터분석 및 전송 프로그램').Layout(layout)
 
     # 환경설정 파일 Load
     EnvFileRead(window)
+
+    t.setSignal(False)
+    t.start()
 
     while True:
         event, values = window.Read()
@@ -96,11 +100,18 @@ if __name__ == '__main__':
 
         if event == 'Save':
             EnvSave(values)
-        elif event == 'Start':
+        elif event == 'Start':    # process start
             print(event)
-            t.start()
-            #t1 = threading.Thread(target=getHTML, args = ('http://google.com', ))
-            #t1.start()
+            t.setTm(int(values['_tmList_']))
+            t.setSignal(True)
+        elif event == 'End':     # process end
+            t.setSignal(False)   # process stop
+            # while True:
+            #     if t.is_alive() is False:
+            #         break
+            #     else:
+            #         t.join()
+            #         time.sleep(1)
 
         # 기존 입력값을 설정한다.
         window.FindElement('_machine_dir_').Update(values['_machine_dir_'])
@@ -111,6 +122,10 @@ if __name__ == '__main__':
         window.FindElement('_db_col_').Update(values['_db_col_'])
 
         #print(event, values)
+
+    t.setSignal(False)
+    t.setStopBit(0)
+    t.join()
     window.Close()
 
 
